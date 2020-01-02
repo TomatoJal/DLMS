@@ -59,14 +59,14 @@ class DLMSBaseType:
         output = self.__class__.__name__ + '({})'.format(list(self.frame))
         return output
 
-    def get_frame_string(self, space=False):
+    def get_frame_string(self, space=True):
         """打印frame"""
         output = ''
         for i in self.frame:
             output += hex(int(i))[2:].rjust(2, '0')
             if space is True:
                 output += ' '
-        return output
+        return output.upper()
 
     @property
     def get_info(self):
