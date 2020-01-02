@@ -12,7 +12,7 @@ def trans_to_array(frame):
     return array('B', [int(b, 16) for b in frame])
 
 
-def u8_to_hex(u8, header=None):
+def u8_to_hex(u8, header='0x'):
     """
     将一字节数转换为十六进制字符串
     :param u8: 一字节数
@@ -22,8 +22,8 @@ def u8_to_hex(u8, header=None):
     if u8 > 255 or u8 < 0:
         return None
     if header is not None:
-        return header + hex(u8)[2:].rjust(2, '0')
-    return hex(u8)[2:].rjust(2, '0')
+        return header + hex(u8)[2:].rjust(2, '0').upper()
+    return hex(u8)[2:].rjust(2, '0').upper()
 
 
 class DLMSBaseType:
