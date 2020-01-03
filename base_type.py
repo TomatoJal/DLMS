@@ -54,6 +54,10 @@ class DLMSBaseType:
         for key in other.element.keys():
             if key not in self.element.keys():
                 new_obj.element[key] = other.element[key]
+        if self.frame_type is not None:
+            new_obj.frame_type = self.frame_type
+        elif other.frame_type is not None:
+            new_obj.frame_type = other.frame_type
         return new_obj
 
     def __len__(self):
