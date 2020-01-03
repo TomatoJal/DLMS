@@ -71,7 +71,8 @@ def cal_check_field(frame):
     :param frame: 计算帧
     :return: 计算FCS, HCS
     """
-    frame = trans_to_array(frame)
+    if isinstance(frame, str) is True:
+        frame = trans_to_array(frame)
 
     fcs = 0xffff
 
@@ -227,14 +228,14 @@ class HDLCControl(DLMSBaseType):
                 self._set_info('control', 'FRMR frame,' + f'P/f: {pf}')
 
 
-class HDLCHCS(DLMSBaseType):
+class HDLCCS(DLMSBaseType):
     """
     Header check sequence (HCS) field
     Frame check sequence (FCS) field
     """
     def __init__(self, frame, ht, header=None):
-        super(HDLCHCS, self).__init__(frame)
-        self.element['HCS'] = DLMSBaseType.element_namedtuple(self.frame, None)
+        super(HDLCCS, self).__init__(frame)
+        self.element[ht] = DLMSBaseType.element_namedtuple(self.frame, None)
         # 长度1字节,值恒为0x7E
         if len(self.frame) == 2:
             hcs = self.frame[0] + (self.frame[1] << 8)
@@ -245,8 +246,68 @@ class HDLCHCS(DLMSBaseType):
 
 
 class HDLCInformation(DLMSBaseType):
-    pass
+    """
+    User information 类
+    """
+    def __init__(self, frame):
+        super(HDLCInformation, self).__init__(frame)
+        self.element['information'] = DLMSBaseType.element_namedtuple(self.frame, None)
+        info = ''
+        for i in self.frame:
+            info += to_hex(i) + ' '
+        self._set_info('information', 'information：' + info)
 
 
-class HDLC(DLMSBaseType):
-    pass
+def hdlc(frame):
+    """
+    HDLC frame format type 3:
+    Flag|Frame format|Dest.address|Src.address|Control|HCS|Information|FCS|Flag|
+    :param frame: 帧
+    :return: 正确帧返回HDLC类
+    """
+    frame = trans_to_array(frame)
+    # Flag
+    flag1 = HDLCFlag([frame[0]])
+    flag2 = HDLCFlag([frame[-1]])
+    if flag1.element['flag'].info is None or flag2.element['flag'].info is None:
+        return None
+    # Frame format
+    fo = HDLCFormat(frame[1:3])
+    if fo.element['format'].info is None:
+        return None
+    # Dest.address, Src.address
+    dest = None
+    for a in range(3, 7):
+        if frame[a] & 0x00000001 == 1:
+            dest = HDLCAddress(frame[3: a+1], 'dest')
+            break
+    for b in range(a+1, a+5):
+        if frame[b] & 0x00000001 == 1:
+            src = HDLCAddress(frame[a+1: b+1], 'src')
+            break
+    if dest.element['dest'].info is None or src.element['src'].info is None:
+        return None
+    # Control
+    control = HDLCControl([frame[b+1]])
+    if control.element['control'].info is None:
+        return None
+    # HCS
+    header = fo+dest+src+control
+    hcs = HDLCCS(frame[b+2: b+4], 'HCS', header.frame)
+    if hcs.element['HCS'].info is None:
+        return None
+    header += hcs
+    # user information
+    information = HDLCInformation(frame[b+4: -3])
+    if information.element['information'].info is None:
+        return None
+    header += information
+    # FCS
+    fcs = HDLCCS(frame[-3: -1], 'FCS', header.frame)
+    if fcs.element['FCS'].info is None:
+        return None
+    header += fcs
+    return flag1 + header +flag2
+
+
+
