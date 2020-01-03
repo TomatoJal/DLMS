@@ -273,41 +273,52 @@ def hdlc(frame):
         return None
     # Frame format
     fo = HDLCFormat(frame[1:3])
+    header = fo
     if fo.element['format'].info is None:
-        return None
-    # Dest.address, Src.address
+        header._set_info('format', 'Wrong format type')
+    # Dest.address
     dest = None
     for a in range(3, 7):
         if frame[a] & 0x00000001 == 1:
             dest = HDLCAddress(frame[3: a+1], 'dest')
             break
+    header += dest
+    if dest.element['dest'].info is None:
+        header._set_info('dest', 'Wrong dest address')
+    # Src.address
+    src = None
     for b in range(a+1, a+5):
         if frame[b] & 0x00000001 == 1:
             src = HDLCAddress(frame[a+1: b+1], 'src')
             break
-    if dest.element['dest'].info is None or src.element['src'].info is None:
-        return None
+    header += src
+    if src.element['src'].info is None:
+        header._set_info('src', 'Wrong src address')
     # Control
     control = HDLCControl([frame[b+1]])
+    header += control
     if control.element['control'].info is None:
-        return None
+        header._set_info('control', 'Wrong control byte')
     # HCS
-    header = fo+dest+src+control
     hcs = HDLCCS(frame[b+2: b+4], 'HCS', header.frame)
-    if hcs.element['HCS'].info is None:
-        return None
     header += hcs
+    if hcs.element['HCS'].info is None:
+        header._set_info('HCS', 'Wrong HCS byte')
     # user information
     information = HDLCInformation(frame[b+4: -3])
-    if information.element['information'].info is None:
-        return None
     header += information
+    if information.element['information'].info is None:
+        header._set_info('information', 'Wrong information')
     # FCS
     fcs = HDLCCS(frame[-3: -1], 'FCS', header.frame)
-    if fcs.element['FCS'].info is None:
-        return None
     header += fcs
+    if fcs.element['FCS'].info is None:
+        header._set_info('FCS', 'Wrong FCS byte')
     return flag1 + header +flag2
 
+
+if __name__ == '__main__':
+    test = hdlc('7E A0 21 21 02 23 73 8F 72 81 80 14 05 02 01 00 06 02 01 00 07 04 00 00 00 01 08 04 00 00 00 01 69 6D 7E')
+    print(test.get_info)
 
 
