@@ -94,7 +94,7 @@ class HDLCFlag(DLMSBaseType):
         # 长度1字节,值恒为0x7E
         if len(self.frame) == 1 and self.element['flag'].value[0] == self.HDLC_FLAG:
             f = self.frame[0]
-            self._set_info('flag', 'flag: ' + to_hex(f))
+            self.set_info('flag', 'flag: ' + to_hex(f))
 
 
 class HDLCFormat(DLMSBaseType):
@@ -113,7 +113,7 @@ class HDLCFormat(DLMSBaseType):
             ft = self.frame[0] >> 4
             s = self.frame[0] & 0b00001000
             length = ((self.frame[0] & 0b00000111) << 8) + self.frame[1]
-            self._set_info('format', 'format type: ' + to_hex(ft) + ',' +
+            self.set_info('format', 'format type: ' + to_hex(ft) + ',' +
                                      'segmentation: ' + str(s) + ',' +
                                      'frame length sub-field: ' + str(length))
 
@@ -161,7 +161,7 @@ class HDLCAddress(DLMSBaseType):
             for i in self.frame:
                 tmp = (tmp << 8) + i
             # 如何区分server/client?
-            self._set_info(owner, owner + ' address: ' + str((tmp & 0xFF) >> 1))
+            self.set_info(owner, owner + ' address: ' + str((tmp & 0xFF) >> 1))
 
 
 class HDLCControl(DLMSBaseType):
@@ -192,40 +192,40 @@ class HDLCControl(DLMSBaseType):
             # I|R R R P/F S S S 0
             if control & 0b00000001 == 0:
                 self.frame_type = 'I'
-                self._set_info(control, 'I frame, ' + f'receive: {receive}, send: {send}, '
+                self.set_info(control, 'I frame, ' + f'receive: {receive}, send: {send}, '
                                         f'P/F: {pf}')
             # RR|R R R P/F 0 0 0 1
             elif control & 0b00001111 == 0b0001:
                 self.frame_type = 'RR'
-                self._set_info('control', 'RR frame, ' + f'receive: {receive}, P/F: {pf}')
+                self.set_info('control', 'RR frame, ' + f'receive: {receive}, P/F: {pf}')
             # RNR|R R R P/F 0 1 0 1
             elif control & 0b00001111 == 0b0101:
                 self.frame_type = 'RNR'
-                self._set_info('control', 'RNR frame, ' + f'receive: {receive}, P/F: {pf}')
+                self.set_info('control', 'RNR frame, ' + f'receive: {receive}, P/F: {pf}')
             # SNRM|1 0 0 P 0 0 1 1
             elif control & 0b11101111 == 0b10000011:
                 self.frame_type = 'SNRM'
-                self._set_info('control', 'SNRM frame, ' + f'Poll: {pf}')
+                self.set_info('control', 'SNRM frame, ' + f'Poll: {pf}')
             # DISC|0 1 0 P 0 0 1 1
             elif control & 0b11101111 == 0b01000011:
                 self.frame_type = 'DISC'
-                self._set_info('control', 'DISC frame, ' + f'Poll: {pf}')
+                self.set_info('control', 'DISC frame, ' + f'Poll: {pf}')
             # UA|0 1 1 F 0 0 1 1
             elif control & 0b11101111 == 0b01000011:
                 self.frame_type = 'UA'
-                self._set_info('control', 'UA frame, ' + f'Final: {pf}')
+                self.set_info('control', 'UA frame, ' + f'Final: {pf}')
             # DM|0 0 0 F 1 1 1 1
             elif control & 0b11101111 == 0b00001111:
                 self.frame_type = 'DM'
-                self._set_info('control', 'DM frame, ' + f'Final: {pf}')
+                self.set_info('control', 'DM frame, ' + f'Final: {pf}')
             # FRMR|1 0 0 F 0 1 1 1
             elif control & 0b11101111 == 0b10000111:
                 self.frame_type = 'FRMR'
-                self._set_info('control', 'FRMR frame, ' + f'Final: {pf}')
+                self.set_info('control', 'FRMR frame, ' + f'Final: {pf}')
             # UI|0 0 0 P/F 0 0 1 1
             elif control & 0b11100011 == 0b00000011:
                 self.frame_type = 'UI'
-                self._set_info('control', 'FRMR frame,' + f'P/f: {pf}')
+                self.set_info('control', 'FRMR frame,' + f'P/f: {pf}')
 
 
 class HDLCCS(DLMSBaseType):
@@ -242,7 +242,7 @@ class HDLCCS(DLMSBaseType):
             if header is not None:
                 if hcs != cal_check_field(header):
                     return
-            self._set_info(ht, ht + ': 0x' + to_hex(hcs))
+            self.set_info(ht, ht + ': 0x' + to_hex(hcs))
 
 
 class HDLCInformation(DLMSBaseType):
@@ -255,7 +255,7 @@ class HDLCInformation(DLMSBaseType):
         info = ''
         for i in self.frame:
             info += to_hex(i) + ' '
-        self._set_info('information', 'information：' + info)
+        self.set_info('information', 'information：' + info)
 
 
 def hdlc(frame):
@@ -275,7 +275,7 @@ def hdlc(frame):
     fo = HDLCFormat(frame[1:3])
     header = fo
     if fo.element['format'].info is None:
-        header._set_info('format', 'Wrong format type')
+        header.set_info('format', 'Wrong format type')
     # Dest.address
     dest = None
     for a in range(3, 7):
@@ -284,7 +284,7 @@ def hdlc(frame):
             break
     header += dest
     if dest.element['dest'].info is None:
-        header._set_info('dest', 'Wrong dest address')
+        header.set_info('dest', 'Wrong dest address')
     # Src.address
     src = None
     for b in range(a+1, a+5):
@@ -293,27 +293,27 @@ def hdlc(frame):
             break
     header += src
     if src.element['src'].info is None:
-        header._set_info('src', 'Wrong src address')
+        header.set_info('src', 'Wrong src address')
     # Control
     control = HDLCControl([frame[b+1]])
     header += control
     if control.element['control'].info is None:
-        header._set_info('control', 'Wrong control byte')
+        header.set_info('control', 'Wrong control byte')
     # HCS
     hcs = HDLCCS(frame[b+2: b+4], 'HCS', header.frame)
     header += hcs
     if hcs.element['HCS'].info is None:
-        header._set_info('HCS', 'Wrong HCS byte')
+        header.set_info('HCS', 'Wrong HCS byte')
     # user information
     information = HDLCInformation(frame[b+4: -3])
     header += information
     if information.element['information'].info is None:
-        header._set_info('information', 'Wrong information')
+        header.set_info('information', 'Wrong information')
     # FCS
     fcs = HDLCCS(frame[-3: -1], 'FCS', header.frame)
     header += fcs
     if fcs.element['FCS'].info is None:
-        header._set_info('FCS', 'Wrong FCS byte')
+        header.set_info('FCS', 'Wrong FCS byte')
     return flag1 + header +flag2
 
 

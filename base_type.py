@@ -84,10 +84,10 @@ class DLMSBaseType:
                 return f'Wrong {key}'
         return self.element
 
-    def _set_info(self, m, info):
+    def set_info(self, m, info):
         self.element[m] = self.element[m]._replace(info=info)
 
-    def _set_value(self, m, value):
+    def set_value(self, m, value):
         self.element[m] = self.element[m]._replace(value=value)
 
 
