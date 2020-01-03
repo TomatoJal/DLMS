@@ -28,6 +28,7 @@ class HDLCFormat(DLMSBaseType):
     MSB                                  LSB
     |1 0 1 0    | S |L L L L L L L L L L L |
     |Format type|   |Frame length sub-field|
+    sub-field is 1010 (binary), which identifies a frame format type 3
     """
     def __init__(self, frame):
         super(HDLCFormat, self).__init__(frame)
@@ -88,18 +89,68 @@ class HDLCAddress(DLMSBaseType):
             self._set_info(owner, owner + ' address: ' + to_hex(tmp))
 
 
-if __name__ == '__main__':
-    flag = HDLCFlag('7E')
-    print(flag.get_info)
+class HDLCControl(DLMSBaseType):
+    """
+    HDLC control类：
+    Command Response    MSB           LSB
+    I       I           R R R P/F S S S 0
+    RR      RR          R R R P/F 0 0 0 1   (Receive ready)
+    RNR     RNR         R R R P/F 0 1 0 1   (Receive not ready)
+    SNRM                1 0 0  P  0 0 1 1   (Set normal response mode)
+    DISC                0 1 0  P  0 0 1 1   (Disconnect)
+            UA          0 1 1  F  0 0 1 1   (Unnumbered acknowledge)
+            DM          0 0 0  F  1 1 1 1   (Disconnected mode)
+            FRMR        1 0 0  F  0 1 1 1   (Frame reject)
+    UI      UI          0 0 0 P/F 0 0 1 1   (Unnumbered information)
+    RRR is the receive sequence number N(R)
+    SSS is the send sequence number N(S)
+    P/F is the poll/final bit.
+    """
+    def __init__(self, frame):
+        super(HDLCControl, self).__init__(frame)
+        self.element['control'] = DLMSBaseType.element_namedtuple(self.frame, None)
+        if len(self.frame) == 1:
+            control = self.element['control'][0][0]
+            pf = ((control & 0b00010000) >> 4)
+            receive = control >> 5
+            send = ((control & 0b00001110) >> 5)
+            # I|R R R P/F S S S 0
+            if control & 0b00000001 == 0:
+                self.frame_type = 'I'
+                self._set_info(control, 'I frame, ' + f'receive: {receive}, send: {send}, '
+                                        f'P/F: {pf}')
+            # RR|R R R P/F 0 0 0 1
+            elif control & 0b00001111 == 0b0001:
+                self.frame_type = 'RR'
+                self._set_info('control', 'RR frame, ' + f'receive: {receive}, P/F: {pf}')
+            # RNR|R R R P/F 0 1 0 1
+            elif control & 0b00001111 == 0b0101:
+                self.frame_type = 'RNR'
+                self._set_info('control', 'RNR frame, ' + f'receive: {receive}, P/F: {pf}')
+            # SNRM|1 0 0 P 0 0 1 1
+            elif control & 0b11101111 == 0b10000011:
+                self.frame_type = 'SNRM'
+                self._set_info('control', 'SNRM frame, ' + f'Poll: {pf}')
+            # DISC|0 1 0 P 0 0 1 1
+            elif control & 0b11101111 == 0b01000011:
+                self.frame_type = 'DISC'
+                self._set_info('control', 'DISC frame, ' + f'Poll: {pf}')
+            # UA|0 1 1 F 0 0 1 1
+            elif control & 0b11101111 == 0b01000011:
+                self.frame_type = 'UA'
+                self._set_info('control', 'UA frame, ' + f'Final: {pf}')
+            # DM|0 0 0 F 1 1 1 1
+            elif control & 0b11101111 == 0b00001111:
+                self.frame_type = 'DM'
+                self._set_info('control', 'DM frame, ' + f'Final: {pf}')
+            # FRMR|1 0 0 F 0 1 1 1
+            elif control & 0b11101111 == 0b10000111:
+                self.frame_type = 'FRMR'
+                self._set_info('control', 'FRMR frame, ' + f'Final: {pf}')
+            # UI|0 0 0 P/F 0 0 1 1
+            elif control & 0b11100011 == 0b00000011:
+                self.frame_type = 'UI'
+                self._set_info('control', 'FRMR frame,' + f'P/f: {pf}')
 
-    form = HDLCFormat('A0 21')
-    print(form.get_info)
 
-    dest = HDLCAddress('02 23', 'dest')
-    print(dest.get_info)
 
-    src = HDLCAddress('21', 'src')
-    print(src.get_info)
-
-    print(flag + form + dest + src)
-    print((flag + form + dest + src).get_info)

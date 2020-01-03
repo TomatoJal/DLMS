@@ -37,6 +37,8 @@ class DLMSBaseType:
             frame = trans_to_array(frame)
         self.frame = array('B', frame)
         self.element = dict()
+        # 帧类型
+        self.frame_type = None
 
     def __getitem__(self, index):
         """实现序列协议"""
