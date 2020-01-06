@@ -276,7 +276,7 @@ def hdlc(frame):
     header = fo
     if fo.element['format'].info is None:
         header.set_info('format', 'Wrong format type')
-    if fo.length != len(frame) - 3:
+    if fo.length != len(frame) - 2:
         header.set_info('format', 'Wrong length in format type')
     # Dest.address
     dest = None
