@@ -1,2 +1,2 @@
-cd testdoc
+cd notebook
 jupyter notebook
