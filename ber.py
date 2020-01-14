@@ -24,6 +24,33 @@ PRIMITIVE = 0b00000000       # 原始数据类型
 CONSTRUCTED = 0b00100000     # 构造数据类型
 
 """UNIVERSAL tag"""
+"""
+
+#define BER_TYPE_BOOLEAN				0x01
+#define BER_TYPE_INTEGER				0x02
+#define BER_TYPE_BIT_STRING				0x03
+#define BER_TYPE_OCTET_STRING				0x04
+#define BER_TYPE_NULL					0x05
+#define BER_TYPE_OID					0x06
+#define BER_TYPE_SEQUENCE				0x30
+#define BER_TYPE_COUNTER				0x41
+#define BER_TYPE_GAUGE					0x42
+#define BER_TYPE_TIME_TICKS				0x43
+#define BER_TYPE_NO_SUCH_OBJECT				0x80
+#define BER_TYPE_NO_SUCH_INSTANCE			0x81
+#define BER_TYPE_END_OF_MIB_VIEW			0x82
+#define BER_TYPE_SNMP_GET				0xA0
+#define BER_TYPE_SNMP_GETNEXT				0xA1
+#define BER_TYPE_SNMP_RESPONSE				0xA2
+#define BER_TYPE_SNMP_SET				0xA3
+#define BER_TYPE_SNMP_GETBULK				0xA5
+#define BER_TYPE_SNMP_INFORM				0xA6
+#define BER_TYPE_SNMP_TRAP				0xA7
+#define BER_TYPE_SNMP_REPORT				0xA8
+————————————————
+版权声明：本文为CSDN博主「聪明的狐狸」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/smartfox80/article/details/18899707
+"""
 BER_TYPE_REVERSE0, BER_TYPE_BOOLEAN, BER_TYPE_INTEGER, BER_TYPE_BIT_STRING, BER_TYPE_OCTET_STRING, BER_TYPE_NULL = \
                 0,                1,                3,                   4,                     5,             6
 """------------------------------------------------------------------------------------------------------------------"""
@@ -121,7 +148,6 @@ def asn_length_decoder(length):
     """输入length的字节长度错误"""
     if header > 0x80 and len(length) - 1 != header - 0x80:
         return None
-        raise ValueError('Length frame error')
 
     if header <= 128:
         output = header
