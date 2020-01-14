@@ -252,13 +252,10 @@ class HDLCInformation(DLMSBaseType):
     def __init__(self, frame):
         super(HDLCInformation, self).__init__(frame)
         self.element['information'] = DLMSBaseType.element_namedtuple(self.frame, None)
-        info = ''
-        for i in self.frame:
-            info += to_hex(i) + ' '
-        self.set_info('information', 'information：' + info)
+        self.set_info('information', 'information：' + ' '.join([to_hex(i) for i in self.frame]))
 
 
-class SNRMInfo(HDLCInformation):
+class SNRMorUAInfo(HDLCInformation):
     """
     User information SNRM类
     """
@@ -270,8 +267,7 @@ class SNRMInfo(HDLCInformation):
     }
 
     def __init__(self, frame, MAX_INFO_SIZE = 256):
-        super(SNRMInfo, self).__init__(frame)
-        # 长度2字节
+        super(SNRMorUAInfo, self).__init__(frame)
         if len(self.frame) >= 3:
             # format identifier
             self.element['format_identifier'] = DLMSBaseType.element_namedtuple(self.frame[0], None)
@@ -303,6 +299,29 @@ class SNRMInfo(HDLCInformation):
                         self.element[self.para[d]] = DLMSBaseType.element_namedtuple(self.frame[s: i+1], None)
                         self.set_info(self.para[d], self.para[d] + '：' + str(v))
 
+
+class IInfo(HDLCInformation):
+    """
+    User information I类
+    """
+    def __init__(self, frame):
+        super(IInfo, self).__init__(frame)
+        if len(self.frame) >= 3:
+            # Destination (remote) LSAP
+            self.element['Destination_LSAP'] = DLMSBaseType.element_namedtuple(self.frame[0], None)
+            if self.frame[0] == 0xE6:
+                self.set_info('Destination_LSAP', 'Destination_LSAP：' + to_hex(self.frame[0]))
+            # Source (local) LSAP
+            self.element['Source_LASP'] = DLMSBaseType.element_namedtuple(self.frame[1], None)
+            if self.frame[1] == 0xE6 or self.frame[1] == 0xE7:
+                self.set_info('Source_LASP', 'Source_LASP：' + to_hex(self.frame[1]))
+            # LLC_Quality
+            self.element['LLC_Quality'] = DLMSBaseType.element_namedtuple(self.frame[2], None)
+            if self.frame[2] == 0x00:
+                self.set_info('LLC_Quality', 'LLC_Quality：' + str(self.frame[2]))
+            # I Info
+            self.element['I_Information'] = DLMSBaseType.element_namedtuple(self.frame[3:], None)
+            self.set_info('I_Information', 'I_Information: ' + ' '.join([to_hex(i) for i in self.frame[3:]]))
 
 
 def hdlc(frame):
@@ -375,6 +394,6 @@ if __name__ == '__main__':
     def test(cls):
         for key in cls.get_info:
             print(cls.get_info[key].info)
-    test(SNRMInfo('81 80 14 05 02 07 EE 06 02 07 EE 07 04 00 00 00 01 08 04 00 00 00 01'))
+    test(SNRMorUAInfo('81 80 14 05 02 07 EE 06 02 07 EE 07 04 00 00 00 01 08 04 00 00 00 01'))
 
 
