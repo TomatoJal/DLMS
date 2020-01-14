@@ -258,6 +258,53 @@ class HDLCInformation(DLMSBaseType):
         self.set_info('information', 'information：' + info)
 
 
+class SNRMInfo(HDLCInformation):
+    """
+    User information SNRM类
+    """
+    para = {
+        5: 'maximum information field length – transmit',
+        6: 'maximum information field length – receive',
+        7: 'window size, transmit',
+        8: 'window size, receive',
+    }
+
+    def __init__(self, frame, MAX_INFO_SIZE = 256):
+        super(SNRMInfo, self).__init__(frame)
+        # 长度2字节
+        if len(self.frame) >= 3:
+            # format identifier
+            self.element['format_identifier'] = DLMSBaseType.element_namedtuple(self.frame[0], None)
+            if self.frame[0] == 0x81:
+                self.set_info('format_identifier', 'format_identifier：' + to_hex(self.frame[0]))
+            # group identifier
+            self.element['group_identifier'] = DLMSBaseType.element_namedtuple(self.frame[1], None)
+            if self.frame[1] == 0x80:
+                self.set_info('group_identifier', 'group_identifier：' + to_hex(self.frame[1]))
+            # group length
+            self.element['group_length'] = DLMSBaseType.element_namedtuple(self.frame[2], None)
+            if self.frame[2] == (len(self.frame) - 3):
+                self.set_info('group_length', 'group_length：' + str(self.frame[2]))
+
+                # group length 正确再进行解包
+                i = 2
+                while i < len(self.frame)-1:
+                    i += 1
+                    s = i
+                    if self.frame[i] in self.para.keys():
+                        d = self.frame[i]  # identifier
+                        i += 1
+                        l = self.frame[i]  # length
+                        v = 0
+                        for j in range(0, l):
+                            i += 1
+                            v <<= 8
+                            v += self.frame[i]
+                        self.element[self.para[d]] = DLMSBaseType.element_namedtuple(self.frame[s: i+1], None)
+                        self.set_info(self.para[d], self.para[d] + '：' + str(v))
+
+
+
 def hdlc(frame):
     """
     HDLC frame format type 3:
@@ -321,11 +368,13 @@ def hdlc(frame):
         fcs = HDLCCS('', 'FCS')
         header += fcs
         header.set_info('FCS', 'No FCS')
-    return flag1 + header +flag2
+    return flag1 + header + flag2
 
 
 if __name__ == '__main__':
-    test = hdlc('7E A0 08 02 23 21 53 B1 A2 7E')
-    print(test.get_info)
+    def test(cls):
+        for key in cls.get_info:
+            print(cls.get_info[key].info)
+    test(SNRMInfo('81 80 14 05 02 07 EE 06 02 07 EE 07 04 00 00 00 01 08 04 00 00 00 01'))
 
 
