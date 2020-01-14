@@ -2,7 +2,7 @@
 import math
 from collections import namedtuple
 from base_type import DLMSBaseType
-from hdlc.hdlc import IInfo
+from channel.hdlc import IInfo
 from public import *
 
 """
