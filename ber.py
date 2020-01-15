@@ -90,11 +90,21 @@ def ber_decode(message, result=None):
     ber_cls = ber_type & 0b11000000
     ber_pc = ber_type & 0b00100000
     ber_tag = ber_type & 0b00011111
-    ber_len = message[1]
+    # 若tag >= 31, 第一个字节后5bit都为1, 其tag 为后续直到bit 7 为0(最后一个)的0~6 bit相接
+    offset = 1
+    if ber_tag == 31:
+        ber_tag = (message[offset] & 0b01111111)
+        while message[offset] & 0b10000000 != 0:
+            offset += 1
+            ber_tag <<= 8
+            ber_tag += (message[offset] & 0b01111111)
+
+    offset += 1
+    ber_len = message[offset]
 
     # Assume that the ber_value is offset 2 or is blank
     # first + tag
-    offset = 2
+    offset += 1
     if ber_len > 0x80:
         offset += (ber_len & 0x7F)
         ber_len = asn_length_decoder(message[1: 1+ber_len-0x80+1])
