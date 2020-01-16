@@ -1,5 +1,6 @@
 from collections import namedtuple
 from public import *
+from ber import *
 
 
 class DLMSBaseType:
@@ -65,5 +66,29 @@ class DLMSBaseType:
         self.element[m] = self.element[m]._replace(value=value)
 
 
-if __name__ == '__main__':
-    print(to_hex(10, header='0x'))
+class BerBoolean(DLMSBaseType):
+    def __init__(self, frame, obj='Boolean'):
+        super(BerBoolean, self).__init__(frame)
+        self.element[obj] = DLMSBaseType.element_namedtuple(self.frame, None)
+        if self.frame[0] == BER_TYPE_BOOLEAN and \
+           len(self.frame) == 2 and (self.frame[1] == 0 or self.frame[1] == 1):
+            self.set_info(obj, obj + ': ' + to_hex(self.frame[1]))
+
+
+class BerInteger(DLMSBaseType):
+    def __init__(self, frame, obj='Boolean'):
+        super(BerInteger, self).__init__(frame)
+        self.element[obj] = DLMSBaseType.element_namedtuple(self.frame, None)
+        if self.frame[0] == BER_TYPE_INTEGER and \
+           len(self.frame) == 2:
+            self.set_info(obj, obj + ': ' + to_hex(self.frame[1]))
+
+
+class BerOctetString(DLMSBaseType):
+    def __init__(self, frame, obj='OctetString'):
+        super(BerOctetString, self).__init__(frame)
+        self.element[obj] = DLMSBaseType.element_namedtuple(self.frame, None)
+        # 长度处理要改为ASN
+        if self.frame[0] == BER_TYPE_OCTET_STRING and \
+           self.frame[1] == len(self.frame) - 2:
+            self.set_info(obj, obj + ': ' + ''.join([to_hex(i) for i in self.frame]))

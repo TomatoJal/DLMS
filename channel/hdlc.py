@@ -252,7 +252,7 @@ class HDLCInformation(DLMSBaseType):
     def __init__(self, frame):
         super(HDLCInformation, self).__init__(frame)
         self.element['information'] = DLMSBaseType.element_namedtuple(self.frame, None)
-        self.set_info('information', 'information：' + ' '.join([to_hex(i) for i in self.frame]))
+        self.set_info('information', 'information：' + ''.join([to_hex(i) for i in self.frame]))
 
 
 class SNRMorUAInfo(HDLCInformation):

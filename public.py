@@ -26,3 +26,15 @@ def to_hex(u, header=''):
     output = [header + i.upper() for i in output]
     return ''.join(output)
 
+
+def array_to_u32(a, big_endian=True):
+    ret = 0
+    if big_endian is True:
+        for i in a:
+            ret <<= 8
+            ret += i
+    else:
+        for i in range(0, len(a)).__reversed__():
+            ret <<= 8
+            ret += a[i]
+    return ret
