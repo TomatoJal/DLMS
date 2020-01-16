@@ -27,6 +27,8 @@ def aarq(frame):
         implementation-information   [29] IMPLICIT Implementation-data OPTIONAL,
         user-information             [30] EXPLICIT Association-information OPTIONAL
     }
+    -- The user-information field shall carry an InitiateRequest APDU encoded in A-XDR, and then
+    -- encoding the resulting OCTET STRING in BER.
     """
 
     frame = trans_to_array(frame)
@@ -61,13 +63,18 @@ class ApplicationContextName(DLMSBaseType):
     """
     application-context-name [1] Application-context-name
     Application-context-name ::= OBJECT IDENTIFIER
+    short name (SN) referencing:    A1 09 06 07 60 85 74 05 08 01 01
+    logical name (LN) referencing:  A1 09 06 07 60 85 74 05 08 01 02
     """
     def __init__(self, frame):
         super(ApplicationContextName, self).__init__(frame)
         self.element['ApplicationContextName'] = DLMSBaseType.element_namedtuple(self.frame, None)
-        if len(self.frame) == self.frame[1] + 2:
-            self.set_info('ApplicationContextName', 'ApplicationContextName：' +
-                          ''.join([to_hex(i) for i in self.frame]))
+        if len(self.frame) == self.frame[1] + 2 and \
+                list(self.frame[2: -1]) == [0x06, 0x07, 0x60, 0x85, 0x74, 0x05, 0x08, 0x01]:
+            if self.frame[-1] == 1:
+                self.set_info('ApplicationContextName', 'ApplicationContextName：LN')
+            elif self.frame[-1] == 2:
+                self.set_info('ApplicationContextName', 'ApplicationContextName：SN')
 
 
 class CallingAPTitle(DLMSBaseType):
